@@ -46,7 +46,7 @@ class GuestViewModel(private val repository: GuestRepository) : ViewModel() {
     }
 
     // Real-time counts
-    val attendeeCount = guests.map { it.count { guest -> guest.isAttending } }
+    val attendeeCount = guests.map { it.count { guest -> guest.attending } }
         .stateIn(viewModelScope, SharingStarted.Lazily, 0)
 
     val giftsCount = guests.map { it.count { guest -> guest.hasGift } }
@@ -62,12 +62,12 @@ class GuestViewModel(private val repository: GuestRepository) : ViewModel() {
         val categoryFiltered = if (category == "All") allGuests else allGuests.filter { it.category == category }
         when (attendanceFilter) {
             AttendanceFilter.All -> categoryFiltered
-            AttendanceFilter.Present -> categoryFiltered.filter { it.isAttending }
-            AttendanceFilter.YetToAttend -> categoryFiltered.filter { !it.isAttending }
+            AttendanceFilter.Present -> categoryFiltered.filter { it.attending }
+            AttendanceFilter.YetToAttend -> categoryFiltered.filter { !it.attending }
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val yetToAttendCount = guests.map { it.count { guest -> !guest.isAttending } }
+    val yetToAttendCount = guests.map { it.count { guest -> !guest.attending } }
         .stateIn(viewModelScope, SharingStarted.Lazily, 0)
 
     val categoryCounts = guests.map { list ->

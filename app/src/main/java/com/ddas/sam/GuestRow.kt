@@ -77,7 +77,7 @@ fun ShowItemsDialog(
     onDismiss: () -> Unit
 ) {
     // Local state to manage checkbox values
-    var attendance by remember { mutableStateOf(guest.isAttending) }
+    var attendance by remember { mutableStateOf(guest.attending) }
     var lanyard by remember { mutableStateOf(guest.hasLanyard) }
     var gift by remember { mutableStateOf(guest.hasGift) }
     var foodCoupon by remember { mutableStateOf(guest.hasFoodCoupon) }
@@ -92,7 +92,7 @@ fun ShowItemsDialog(
                     checked = attendance,
                     onCheckedChange = {
                         attendance = it
-                        onEdit(guest.copy(isAttending = attendance))
+                        onEdit(guest.copy(attending = attendance))
                     }
                 )
                 CheckboxRow(

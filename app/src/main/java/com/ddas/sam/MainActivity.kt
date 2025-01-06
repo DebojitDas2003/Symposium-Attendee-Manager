@@ -151,7 +151,7 @@ class MainActivity : ComponentActivity() {
                         row.createCell(4).setCellValue(guest.category)
                         row.createCell(5).setCellValue(guest.amount)
                         row.createCell(6).setCellValue(guest.remarks)
-                        row.createCell(7).setCellValue(if (guest.isAttending) "Yes" else "No")
+                        row.createCell(7).setCellValue(if (guest.attending) "Yes" else "No")
                         row.createCell(8).setCellValue(if (guest.hasLanyard) "Yes" else "No")
                         row.createCell(9).setCellValue(if (guest.hasGift) "Yes" else "No")
                         row.createCell(10).setCellValue(if (guest.hasFoodCoupon) "Yes" else "No")
