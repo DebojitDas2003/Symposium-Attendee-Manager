@@ -23,9 +23,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.ddas.sam" />
-                  <option name="mobileSdkAppId" value="1:790511023830:android:1b3b3102a751b8bc0afb77" />
-                  <option name="projectId" value="symposium-attendee-manager" />
-                  <option name="projectNumber" value="790511023830" />
+                  <option name="mobileSdkAppId" value="1:131797042190:android:b2c75956ba8d55dee4a85f" />
+                  <option name="projectId" value="gcectsam" />
+                  <option name="projectNumber" value="131797042190" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

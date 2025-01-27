@@ -115,6 +115,21 @@ class GuestViewModel(private val repository: GuestRepository) : ViewModel() {
         _searchQuery.value = query
     }
 
+    fun resetFirebase() {
+        viewModelScope.launch {
+            try {
+                _syncStatus.value = "Resetting..."
+                repository.clearFirebaseData()
+                repository.clearLocalDatabase()
+                _syncStatus.value = "Reset Successful"
+            } catch (e: Exception) {
+                _syncStatus.value = "Reset Failed: ${e.message}"
+            }
+        }
+    }
+
+
+
 
 
 

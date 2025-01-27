@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Guest::class], version = 1) // Reset version to 1
+@Database(entities = [Guest::class], version = 2) // Increment version number to 2
 abstract class GuestDatabase : RoomDatabase() {
     abstract fun guestDao(): GuestDao
 
@@ -20,7 +20,7 @@ abstract class GuestDatabase : RoomDatabase() {
                     GuestDatabase::class.java,
                     "guest_database"
                 )
-                    .fallbackToDestructiveMigration() // Add this line to reset the database
+                    .fallbackToDestructiveMigration() // This will delete the old database and create a new one
                     .build()
                 INSTANCE = instance
                 instance

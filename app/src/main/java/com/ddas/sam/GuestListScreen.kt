@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,6 +35,10 @@ fun GuestListScreen(
     val yetToAttendCount by viewModel.yetToAttendCount.collectAsState()
     val attendanceFilter by viewModel.attendanceFilter.collectAsState()
     var guestToDelete by remember { mutableStateOf<Guest?>(null) }
+    var guestToViewItems by remember { mutableStateOf<Guest?>(null) }
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var passwordInput by remember { mutableStateOf("") }
+    val hardcodedPassword = "GCECTAA2025"
 
     Column(
         modifier = Modifier
@@ -48,12 +53,23 @@ fun GuestListScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             Text(
                 text = "Guest List",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(end = 16.dp)
             )
+
+            Button(
+                colors = ButtonDefaults.buttonColors(Color.Red),
+                onClick = { showPasswordDialog = true },
+                modifier = Modifier
+
+                    .padding(start = 4.dp)
+            ) {
+                Text("Reset\nGuestList", textAlign = TextAlign.Center)
+            }
             Button(
                 onClick = { showCategoryFilterDialog = true },
                 modifier = Modifier
@@ -118,9 +134,17 @@ fun GuestListScreen(
                 GuestRow(
                     guest = guest,
                     onEdit = { viewModel.updateGuest(it) },
-                    onDelete = { guestToDelete = it } // Set guest to be deleted
+                    onDelete = { guestToDelete = it }, // Set guest to be deleted
+                    onClick = { guestToViewItems = guest }
                 )
             }
+        }
+
+        guestToViewItems?.let { guest ->
+            GuestItemsDialog(
+                guest = guest,
+                onDismiss = { guestToViewItems = null }
+            )
         }
 
         // Confirmation Dialog for Deleting a Guest
@@ -187,9 +211,7 @@ fun GuestListScreen(
                 }
 
                 // Add empty space to balance the row if there are fewer than 3 items
-                repeat(3 - group.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+
             }
         }
 
@@ -234,8 +256,42 @@ fun GuestListScreen(
                 }
             )
         }
+        if (showPasswordDialog) {
+            AlertDialog(
+                onDismissRequest = { showPasswordDialog = false },
+                title = { Text("Enter Password") },
+                text = {
+                    TextField(
+                        value = passwordInput,
+                        onValueChange = { passwordInput = it },
+                        label = { Text("Password") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (passwordInput == hardcodedPassword) {
+                                viewModel.resetFirebase()
+                                showPasswordDialog = false
+                                passwordInput = ""
+                            }
+                        }
+                    ) {
+                        Text("Confirm")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = { showPasswordDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
     }
 }
+
 
 
 @Composable
@@ -317,3 +373,89 @@ fun DeleteGuestConfirmationDialog(
     )
 }
 
+@Composable
+fun GuestItemsDialog(
+    guest: Guest,
+    onDismiss: () -> Unit
+) {
+    val itemsReceived = mutableListOf<String>()
+
+    // Add items based on the guest's attributes
+    if (guest.hasLanyard) itemsReceived.add("Lanyard")
+    if (guest.hasGift) itemsReceived.add("Gift")
+    if (guest.hasFoodCoupon) itemsReceived.add("Food Coupon")
+
+    // If there are no items, display a message
+    if (itemsReceived.isEmpty()) {
+        itemsReceived.add("No items received")
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Items Received by\n${guest.name}") },
+        text = {
+            Column {
+                itemsReceived.forEach { item ->
+                    Text(text = "- $item")
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+
+@Composable
+fun PasswordDialog(
+    onDismiss: () -> Unit,
+    onPasswordCorrect: () -> Unit,
+    hardcodedPassword: String = "guestreset123"
+) {
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Enter Password to Reset Guest List") },
+        text = {
+            Column {
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (errorMessage.isNotEmpty()) {
+                    Text(
+                        text = errorMessage,
+                        color = Color.Red,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (password == hardcodedPassword) {
+                        onPasswordCorrect()
+                        onDismiss()
+                    } else {
+                        errorMessage = "Incorrect password. Please try again."
+                    }
+                }
+            ) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}

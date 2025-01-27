@@ -25,5 +25,9 @@ interface GuestDao {
     suspend fun deleteGuest(guest: Guest)
 
 
+    @Query("DELETE FROM guest")
+    suspend fun clearAllGuests()
+
+
 
 }

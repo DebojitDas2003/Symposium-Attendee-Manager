@@ -1,6 +1,7 @@
 package com.ddas.sam
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -28,7 +29,8 @@ import androidx.compose.ui.unit.dp
 fun GuestRow(
     guest: Guest,
     onEdit: (Guest) -> Unit,
-    onDelete: (Guest) -> Unit
+    onDelete: (Guest) -> Unit,
+    onClick: () -> Unit
 ) {
     var showItemsDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -36,7 +38,8 @@ fun GuestRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -375,3 +378,4 @@ fun RadioButtonGroup(
         }
     }
 }
+

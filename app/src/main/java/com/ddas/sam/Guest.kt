@@ -16,7 +16,7 @@ data class Guest(
     val remarks: String? = null,
     val paymentMode: String? = null,
     val amount: String? = null,
-    val category: String? = null,
+    val category: String? = "None",
     val deleted: Boolean = false
 ) {
     // No-argument constructor required for Firebase deserialization
@@ -32,7 +32,7 @@ data class Guest(
         remarks = null,
         paymentMode = null,
         amount = null,
-        category = null,
+        category = "None",
         deleted = false
     )
 }
