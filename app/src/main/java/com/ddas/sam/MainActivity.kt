@@ -3,12 +3,13 @@ package com.ddas.sam
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -36,7 +37,10 @@ class MainActivity : ComponentActivity() {
         guestRepository = GuestRepository(guestDao)
 
         // Initialize ViewModel
-        viewModel = ViewModelProvider(this, GuestViewModelFactory(guestRepository)).get(GuestViewModel::class.java)
+        viewModel = ViewModelProvider(
+            this,
+            GuestViewModelFactory(guestRepository)
+        ).get(GuestViewModel::class.java)
 
         // File picker launcher
         importExcelLauncher = registerForActivityResult(
@@ -70,6 +74,7 @@ class MainActivity : ComponentActivity() {
 
                 val guestList = mutableListOf<Guest>()
 
+                // Skip the header row
                 for (row in sheet.drop(1)) {
                     val name = row.getCell(0)?.let {
                         when (it.cellType) {
@@ -108,7 +113,6 @@ class MainActivity : ComponentActivity() {
                         email = email,
                         phoneNumber = phoneNumber,
                         companyName = companyName,
-
                     )
                     guestList.add(guest)
                 }
@@ -126,7 +130,20 @@ class MainActivity : ComponentActivity() {
 
     private fun exportExcelData() {
         val fileName = "GuestList_${System.currentTimeMillis()}.xlsx"
-        val downloadsDir = getExternalFilesDir(null)?.absolutePath
+
+        // Use the app-specific external files directory for downloads
+        val downloadsDir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+        if (downloadsDir == null) {
+            Toast.makeText(
+                this@MainActivity,
+                "Unable to access external storage",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        if (!downloadsDir.exists()) {
+            downloadsDir.mkdirs()
+        }
         val file = File(downloadsDir, fileName)
 
         lifecycleScope.launch {
@@ -136,7 +153,19 @@ class MainActivity : ComponentActivity() {
                 WorkbookFactory.create(true).use { workbook ->
                     val sheet = workbook.createSheet("Guests")
                     val headerRow = sheet.createRow(0)
-                    val headers = listOf("Name", "Email", "Phone Number", "Company Name","Category","Amount", "Remarks", "Attendance", "Lanyard", "Gift", "Food Coupon")
+                    val headers = listOf(
+                        "Name",
+                        "Email",
+                        "Phone Number",
+                        "Company Name",
+                        "Category",
+                        "Amount",
+                        "Remarks",
+                        "Attendance",
+                        "Lanyard",
+                        "Gift",
+                        "Food Coupon"
+                    )
 
                     headers.forEachIndexed { index, header ->
                         headerRow.createCell(index).setCellValue(header)
@@ -161,14 +190,79 @@ class MainActivity : ComponentActivity() {
                         workbook.write(outputStream)
                     }
 
-                    Toast.makeText(this@MainActivity, "Exported to ${file.absolutePath}", Toast.LENGTH_LONG).show()
-                    shareExcelFile(file)
+                    Log.d("ExcelExport", "File saved at: ${file.absolutePath}")
+
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Exported to ${file.absolutePath}",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    // Open the saved file
+                    openExcelFile(file)
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
-                Toast.makeText(this@MainActivity, "Failed to export data", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Failed to export data", Toast.LENGTH_SHORT)
+                    .show()
             }
         }
+    }
+
+    private fun openExcelFile(file: File) {
+        try {
+            val uri = FileProvider.getUriForFile(this, "${packageName}.provider", file)
+
+
+            Log.d("ExcelOpen", "File exists: ${file.exists()}")
+            Log.d("ExcelOpen", "File path: ${file.absolutePath}")
+            Log.d("ExcelOpen", "File size: ${file.length()}")
+            Log.d("ExcelOpen", "URI: $uri")
+
+
+            val openIntent = Intent(Intent.ACTION_VIEW).apply {
+                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                        Intent.FLAG_ACTIVITY_NO_HISTORY
+
+                // Add multiple MIME types that Excel files might use
+                val mimeTypes = arrayOf(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+                    "application/vnd.ms-excel", // .xls
+                    "application/excel",
+                    "application/x-excel",
+                    "application/x-msexcel"
+                )
+
+                setDataAndType(uri, mimeTypes[0])
+
+                // Add alternatives MIME types
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+            }
+
+            try {
+                startActivity(openIntent)
+            } catch (e: Exception) {
+                Log.e("ExcelOpen", "Error opening file: ${e.message}")
+                Toast.makeText(this, "Error opening file: ${e.message}", Toast.LENGTH_LONG).show()
+
+                // Fallback: try to open with a more generic intent
+                val fallbackIntent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "*/*")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                try {
+                    startActivity(Intent.createChooser(fallbackIntent, "Open with..."))
+                } catch (e: Exception) {
+                    Toast.makeText(this, "No app found to open the file", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ExcelOpen", "Error getting URI: ${e.message}")
+            e.printStackTrace()
+        }
+
     }
 
     private fun shareExcelFile(file: File) {
